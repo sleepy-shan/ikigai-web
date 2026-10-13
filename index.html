@@ -35,8 +35,79 @@
 
   <title>Ikigai — Discover & Track Anime & Manga</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Boot indicator: visible while flutter_bootstrap.js loads, and replaced
+       by a readable error instead of a white screen if the bundle 404s
+       (almost always a --base-href mismatch). Removed on first frame. */
+    #ikigai-boot {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      background: #131216; color: #E8E6E1;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-align: center; padding: 24px; z-index: 10;
+    }
+    #ikigai-boot .spin {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.2);
+      border-top-color: #0E7C6B;
+      animation: ikigai-spin 0.9s linear infinite;
+    }
+    @keyframes ikigai-spin { to { transform: rotate(360deg); } }
+    #ikigai-boot .err { display: none; max-width: 560px; }
+    #ikigai-boot.failed .spin, #ikigai-boot.failed .hint { display: none; }
+    #ikigai-boot.failed .err { display: block; }
+    #ikigai-boot code { color: #8FD4C5; }
+  </style>
 </head>
 <body>
+  <div id="ikigai-boot" role="status" aria-live="polite">
+    <div class="spin" aria-hidden="true"></div>
+    <div class="hint">Loading Ikigai…</div>
+    <div class="err">
+      <p><strong>Ikigai could not start.</strong></p>
+      <p>The app bundle failed to load. This is usually a
+      <code>--base-href</code> mismatch: GitHub Pages project sites need
+      <code>--base-href /Ikigai-Project/</code>, root domains need
+      <code>--base-href /</code>.</p>
+      <p>Press F12 → Console/Network and look for 404s on
+      <code>flutter_bootstrap.js</code> or <code>main.dart.js</code>.</p>
+    </div>
+  </div>
+  <noscript>
+    <p style="font-family:system-ui,sans-serif;text-align:center;padding:24px">
+      Ikigai needs JavaScript enabled to run.
+    </p>
+  </noscript>
+  <script>
+    // If the Flutter bundle 404s (wrong base-href) or throws before the
+    // first frame, swap the spinner for the explanation above.
+    window.addEventListener("flutter-first-frame", function () {
+      var el = document.getElementById("ikigai-boot");
+      if (el) el.remove();
+    });
+    // If bootstrap fails to even load, show the error after a timeout.
+    setTimeout(function () {
+      if (!window._flutter_ready && !document.querySelector("flt-glass-pane")) {
+        var s = Array.from(document.scripts).some(function (s) {
+          return (s.src || "").indexOf("flutter_bootstrap") !== -1;
+        });
+        // Only flag failure when bootstrap itself errored; slow networks
+        // just keep the spinner until the first frame fires.
+        if (window._flutter_bootstrap_failed) {
+          var el = document.getElementById("ikigai-boot");
+          if (el) el.classList.add("failed");
+        }
+      }
+    }, 8000);
+    window.addEventListener("error", function (e) {
+      var t = e && e.target;
+      if (t && t.src && (t.src.indexOf("flutter") !== -1 || t.src.indexOf("main.dart") !== -1)) {
+        window._flutter_bootstrap_failed = true;
+        var el = document.getElementById("ikigai-boot");
+        if (el) el.classList.add("failed");
+      }
+    }, true);
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
